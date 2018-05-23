@@ -158,7 +158,7 @@ mlvpn_config(int config_file_fd, int first_time)
                     NULL, 0);
                 if (default_timeout < 5) {
                     log_warnx("config", "timeout capped to 5 seconds");
-                    default_timeout = 5;
+                    default_timeout = 0.5;
                 }
 
                 _conf_set_uint_from_conf(
