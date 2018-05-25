@@ -682,7 +682,6 @@ mlvpn_rtun_new(const char *name,
         strlcpy(new->bindaddr, bindaddr, sizeof(new->bindaddr));
     if (bindport)
         strlcpy(new->bindport, bindport, sizeof(new->bindport));
-    new->bindfib = bindfib;
     if (destaddr)
         strlcpy(new->destaddr, destaddr, sizeof(new->destaddr));
     if (destport)
