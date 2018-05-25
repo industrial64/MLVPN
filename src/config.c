@@ -342,9 +342,6 @@ mlvpn_config(int config_file_fd, int first_time)
                 }
                 LIST_FOREACH(tmptun, &rtuns, entries)
                 {
-                    if (mystr_eq(lastSection, tmptun->name))
-                    {
-<<<<<<< HEAD
                         if (mystr_eq(lastSection, tmptun->name))
                         {
                             log_info("config",
@@ -388,8 +385,6 @@ mlvpn_config(int config_file_fd, int first_time)
                                     tmptun->destport = calloc(1, MLVPN_MAXPORTSTR+1);
                                 strlcpy(tmptun->destport, dstport, MLVPN_MAXPORTSTR);
                             }
-=======
-
 
                         if (bindaddr) {
                             strlcpy(tmptun->bindaddr, bindaddr, sizeof(tmptun->bindaddr));
