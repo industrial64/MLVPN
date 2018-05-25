@@ -622,11 +622,11 @@ mlvpn_rtun_write(EV_P_ ev_io *w, int revents)
 
 mlvpn_tunnel_t *
 mlvpn_rtun_new(const char *name,
-<<<<<<< HEAD
+
                const char *bindaddr, const char *bindport, const char *binddev,
-=======
-               const char *bindaddr, const char *bindport, uint32_t bindfib,
->>>>>>> debian-stretch
+
+               
+               
                const char *destaddr, const char *destport,
                int server_mode, uint32_t timeout,
                int fallback_only, uint32_t bandwidth,
@@ -681,26 +681,19 @@ mlvpn_rtun_new(const char *name,
     if (bindaddr)
         strlcpy(new->bindaddr, bindaddr, sizeof(new->bindaddr));
     if (bindport)
-<<<<<<< HEAD
-    {
-        new->bindport = calloc(1, MLVPN_MAXPORTSTR+1);
-        strlcpy(new->bindport, bindport, MLVPN_MAXPORTSTR);
-    }
-
+        strlcpy(new->bindport, bindport, sizeof(new->bindport));
+    new->bindfib = bindfib;
+    if (destaddr)
+        strlcpy(new->destaddr, destaddr, sizeof(new->destaddr));
+    if (destport)
+        strlcpy(new->destport, destport, sizeof(new->destport));  
     if (binddev)
     {
         new->binddev = calloc(1, MLVPN_IFNAMSIZ+1);
         strlcpy(new->binddev, binddev, MLVPN_IFNAMSIZ);
     }
 
-=======
         strlcpy(new->bindport, bindport, sizeof(new->bindport));
-    new->bindfib = bindfib;
->>>>>>> debian-stretch
-    if (destaddr)
-        strlcpy(new->destaddr, destaddr, sizeof(new->destaddr));
-    if (destport)
-        strlcpy(new->destport, destport, sizeof(new->destport));
     new->sbuf = mlvpn_pktbuffer_init(PKTBUFSIZE);
     new->hpsbuf = mlvpn_pktbuffer_init(PKTBUFSIZE);
     mlvpn_rtun_tick(new);
@@ -811,7 +804,6 @@ mlvpn_rtun_bind(mlvpn_tunnel_t *t)
 
     /* Try open socket with each address getaddrinfo returned,
        until getting a valid listening socket. */
-<<<<<<< HEAD
     memset(bindifstr, 0, sizeof(bindifstr));
     if (t->binddev) {
         snprintf(bindifstr, sizeof(bindifstr) - 1, " on %s", t->binddev);
@@ -827,9 +819,6 @@ mlvpn_rtun_bind(mlvpn_tunnel_t *t)
         }
     }
     log_debug(NULL, "test");
-=======
-    log_info(NULL, "%s bind to %s", t->name, *t->bindaddr ? t->bindaddr : "any");
->>>>>>> debian-stretch
     n = bind(fd, res->ai_addr, res->ai_addrlen);
     freeaddrinfo(res);
     if (n < 0)
