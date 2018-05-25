@@ -6,7 +6,11 @@ ReloadPropagatedFrom=mlvpn.service
 [Service]
 Type=notify
 NotifyAccess=main
+<<<<<<< HEAD
 ExecStart=@sbindir@/mlvpn --config @sysconfdir@/mlvpn/%i.conf --user mlvpn --name %i
+=======
+ExecStart=@sbindir@/mlvpn --config @sysconfdir@/mlvpn/%i.conf --name %i --user mlvpn
+>>>>>>> debian-stretch
 ExecReload=/bin/kill -HUP $MAINPID
 WorkingDirectory=@sysconfdir@/mlvpn
 Restart=on-failure

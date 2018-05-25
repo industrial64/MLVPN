@@ -9,9 +9,9 @@ config.h*
 config.log
 config.status
 configure
-debian/
 doc/build
 doc/examples/mlvpn.conf
+doc/examples/mlvpn.rc
 doc/examples/mlvpn.init.d
 doc/examples/mlvpn_updown.sh
 doc/examples/systemd/Makefile
@@ -27,3 +27,4 @@ test/
 *.swo
 *.tmp
 mlvpn-*.tar.gz
+build/

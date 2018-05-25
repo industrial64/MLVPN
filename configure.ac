@@ -12,7 +12,7 @@ AC_CONFIG_FILES([Makefile
                  man/Makefile])
 AC_CONFIG_MACRO_DIR([m4])
 AC_SUBST([CONFIGURE_ARGS], [$ac_configure_args])
-AM_INIT_AUTOMAKE([foreign -Wall silent-rules])
+AM_INIT_AUTOMAKE([foreign -Wall -Wextra silent-rules])
 
 AM_MAINTAINER_MODE
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES(yes)])
@@ -37,9 +37,6 @@ __attribute__((__unused__)) static void foo(void){return;}]],
       AC_DEFINE(NO_ATTRIBUTE_ON_RETURN_TYPE, 1,
          [compiler does not accept __attribute__ on return types]) ]
 )
-if test "x$no_attrib_nonnull" != "x1" ; then
-    AC_DEFINE([HAVE_ATTRIBUTE__NONNULL__], [1], [Have attribute nonnull])
-fi
 
 AC_CHECK_DECLS(
     [res_init],
@@ -83,22 +80,30 @@ case $host_os in
         bsd=true
     ;;
     *bsd*)
-        AC_MSG_WARN("Unknown BSD system found. Might not work as expected.")
+        AC_MSG_WARN("Unsupported BSD system found. Might not work as expected.")
         AC_DEFINE(HAVE_BSD, 1, [BSD])
         bsd=true
     ;;
+    *darwin*)
+        AC_DEFINE(HAVE_DARWIN, 1, [DARWIN])
+        darwin=true
+    ;;
     *)
-        AC_MSG_ERROR("Unknown operating system.")
+        AC_MSG_ERROR("Unsupported operating system.")
     ;;
 esac
 
 AM_CONDITIONAL([LINUX], [test x$linux = xtrue])
 AM_CONDITIONAL([BSD], [test x$bsd = xtrue])
+AM_CONDITIONAL([DARWIN], [test x$darwin = xtrue])
 
 dnl Checks for library functions. Please keep in alphabetical order
 AC_CHECK_FUNCS([ \
     closefrom \
+    pledge \
     setproctitle \
+    setresgid \
+    setresuid \
     strlcat \
     strlcpy \
     strnvis \
@@ -107,12 +112,11 @@ AC_CHECK_FUNCS([ \
 ])
 
 AM_CONDITIONAL([HAVE_CLOSEFROM], [test x"$have_closefrom" = x"true"])
+AM_CONDITIONAL([HAVE_PLEDGE], [test x"$have_pledge" = x"true"])
 AM_CONDITIONAL([HAVE_SETPROCTITLE], [test x"$have_setproctitle" = x"true"])
 AM_CONDITIONAL([HAVE_STRLCAT], [test x"$have_strlcat" = x"true"])
 AM_CONDITIONAL([HAVE_STRLCPY], [test x"$have_strlcpy" = x"true"])
 AM_CONDITIONAL([HAVE_STRNVIS], [test x"$have_strnvis" = x"true"])
-
-AC_CHECK_FUNCS([setresuid, setresgid])
 
 AC_CACHE_SAVE
 
@@ -120,8 +124,8 @@ dnl checks for libsodium
 PKG_CHECK_MODULES([libsodium], [libsodium >= 0.6], [], [
     AC_CHECK_HEADERS([sodium.h], [], [AC_MSG_ERROR("sodium.h not found")])
     AC_CHECK_LIB([sodium], [sodium_init], [
-    libsodium_LIBS="-lsodium"
-    AC_DEFINE([HAVE_LIBSODIUM], [1], [sodium_init in -lsodium])
+        libsodium_LIBS="-lsodium"
+        AC_DEFINE([HAVE_LIBSODIUM], [1], [sodium_init in -lsodium])
     ], [AC_MSG_ERROR("libsodium not found")])
 ])
 
@@ -130,13 +134,15 @@ dnl checks for libev
 PKG_CHECK_MODULES([libev], [libev], [], [
     AC_CHECK_HEADERS([ev.h], [], [AC_MSG_ERROR("ev.h not found")])
     AC_CHECK_LIB([ev], [ev_time], [
-    libev_LIBS="-lev"
-    AC_DEFINE([HAVE_LIBEV], [1], [ev_time in -lev])
+        libev_LIBS="-lev"
+        AC_DEFINE([HAVE_LIBEV], [1], [ev_time in -lev])
     ], [AC_MSG_ERROR("libev not found")])
 ])
 
+
 ### Command lines options ###
 mlvpn_ARG_ENABLE([control], [remote control system (cli and http)], [yes])
+mlvpn_ARG_ENABLE([filters], [libpcap support for filters], [yes])
 mlvpn_ARG_WITH([install-examples], [install example files], [yes])
 AM_CONDITIONAL([INSTALL_EXAMPLES], [test x"$with_install_examples" = x"yes" ])
 
@@ -158,9 +164,27 @@ mlvpn_ARG_WITH([systemdtmpfilesdir], [Directory for systemd tmpfiles],
     AM_CONDITIONAL(HAVE_SYSTEMDTMPFILESDIR,
         [test -n "$with_systemdtmpfilesdir" -a "x$with_systemdtmpfilesdir" != xno ])
 
-AC_CHECK_PROGS([RONN], [ronn], [:])
-if test "$RONN" = :; then
-    AC_MSG_WARN([Unable to build manpages without ronn! gem install ronn please.])
+dnl checks for libpcap
+# Default values
+AM_CONDITIONAL([HAVE_FILTERS], [false])
+AS_IF([test x"$enable_filters" = x"yes"], [
+    AM_CONDITIONAL([HAVE_FILTERS], [true])
+    AC_DEFINE([HAVE_FILTERS], [], [filters enabled])
+    dnl checks for libpcap
+    PKG_CHECK_MODULES([libpcap], [libpcap], [], [
+        AC_CHECK_HEADERS([pcap.h], [], [AC_MSG_ERROR("pcap.h not found")])
+        AC_CHECK_LIB([pcap], [pcap_open_dead], [
+            libpcap_LIBS="-lpcap"
+        ], [
+            AC_MSG_ERROR("libpcap not found")
+        ])
+    ])
+])
+
+AC_CHECK_PROGS([RONN], [ronn], [])
+AM_CONDITIONAL(HAVE_RONN, [test x"$RONN" != "x"])
+if test x"$RONN" = "x"; then
+    AC_MSG_WARN([ronn is not available, skip manpages build.])
 fi
 
 dnl Enable extra warnings

@@ -1,0 +1,23 @@
+.package_template: &package
+  image: debian:$DIST
+  before_script:
+    - apt-get -qy update && apt-get -qy install flex bison build-essential wget autoconf automake pkg-config m4 git-core devscripts debian-keyring gnupg libdistro-info-perl fakeroot pkg-config dh-autoreconf pbuilder dupload git-buildpackage debhelper libsodium-dev libpcap-dev libev-dev ruby-ronn
+  script:
+    - gbp buildpackage --git-builder="debuild -i -I -us -uc" --git-ignore-branch
+  tags: ["linux"]
+  artifacts:
+    paths:
+      - doc/examples/mlvpn.conf
+      - doc/examples/mlvpn_updown.sh
+      - build/*.deb
+      - build/*.changes
+      - build/*.tar.*
+      - build/*.dsc
+
+debian_stretch_package:
+  <<: *package
+  variables:
+    DIST: stretch
+  only:
+    - debian-stretch
+

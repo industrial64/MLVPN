@@ -17,7 +17,9 @@ mlvpn_SOURCES = \
     wrr.c \
     crypto.c crypto.h \
     log.c log.h \
-    tuntap_generic.h \
+    reorder.h reorder.c \
+    timestamp.h timestamp.c \
+    tuntap_generic.c tuntap_generic.h \
     mlvpn.c mlvpn.h
 
 # There are better ways to do that, using a "compat" library
@@ -46,6 +48,10 @@ if BSD
 mlvpn_SOURCES += tuntap_bsd.c
 endif
 
+if DARWIN
+mlvpn_SOURCES += tuntap_darwin.c
+endif
+
 if ENABLE_CONTROL
 mlvpn_SOURCES += control.c control.h
 endif
@@ -64,3 +70,9 @@ EXTRA_DIST = \
 
 mlvpn_LDADD=-lm $(libsodium_LIBS) $(libev_LIBS)
 mlvpn_CFLAGS=$(CFLAGS) $(libsodium_CFLAGS) $(libev_CFLAGS)
+
+if HAVE_FILTERS
+mlvpn_SOURCES += filters.c
+mlvpn_LDADD += $(libpcap_LIBS)
+mlvpn_CFLAGS += $(libpcap_CFLAGS)
+endif

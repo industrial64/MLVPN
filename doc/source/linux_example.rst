@@ -16,7 +16,7 @@ Example case
                                                            +---------------+
                                               +----------->| Fast internet |--> OUT
                                               |            +---------------+
-                           mlvpn0: 10.42.42.1 |
+                                      mlvpn0  |
                                  +------------+-+
                        +-------->| MLVPN server |<--------+
                        |         +--------------+         |
@@ -35,7 +35,7 @@ Example case
                        |         +---+------+---+         |
                        +---------| MLVPN client |---------+
                                  +--------------+
-                        mlvpn0: 10.42.42.2 eth0: 192.168.0.1
+                            mlvpn0 ; eth0: 192.168.0.1
                                         ^
         +------+                        |
         | LAN  |------------------------+
@@ -48,7 +48,6 @@ In this setup we have multiple machines:
   * MLVPN server which has a fast internet connection (100Mbps)
 
     - Public IP Address: 128.128.128.128/32
-    - Private mlvpn IP address: 10.42.42.1/30
 
   * ADSL 1 router LOCAL IP address 192.168.1.1/24
   * ADSL 2 router LOCAL IP address 192.168.2.1/24
@@ -58,7 +57,6 @@ In this setup we have multiple machines:
     - Private IP address 192.168.1.2/24 to join ADSL1
     - Private IP address 192.168.2.2/24 to join ADSL2
     - Private IP address 192.168.0.1/24 for LAN clients
-    - Private IP address 10.42.42.2/30 on mlvpn0.
 
 Yeah seems a bit complicated, but that's not that hard after all, we just have 4 routers.
 
@@ -123,7 +121,7 @@ Again, we can test the link:
     64 bytes from 213.186.33.13: icmp_req=1 ttl=51 time=62.4 ms
     64 bytes from 213.186.33.13: icmp_req=2 ttl=51 time=61.1 ms
 
-Noticed we changed the source address, and the latency is higher on ADSL2 by ~ 20ms.
+Noticed we changed the source address.
 
 Everything is fine, let's cleanup the routing table:
 
@@ -323,27 +321,25 @@ Take a look at example config files for more details. (**man mlvpn.conf** can be
     [general]
     statuscommand = "/etc/mlvpn/mlvpn0_updown.sh"
     tuntap = "tun"
-    loglevel = 1
     mode = "client"
     interface_name = "mlvpn0"
     timeout = 30
-    password = "pleasechangeme!"
+    password = "you have not changed me yet?"
+    reorder_buffer_size = 64
+    loss_tolerence = 50
+
+    [filters]
 
     [adsl1]
     bindhost = "192.168.1.2"
     remotehost = "128.128.128.128"
     remoteport = 5080
-    bandwidth_upload = 61440
 
     [adsl2]
     bindhost = "192.168.2.2"
     remotehost = "128.128.128.128"
     remoteport = 5081
-    bandwidth_upload = 61440
 
-
-Little note, we are adding 10 ms of latency on adsl1 to match the latency of adsl2.
-This is a little trick to help mlvpn aggregation. (Latency must be matched)
 
 mlvpn0_updown.sh
 ~~~~~~~~~~~~~~~~~
@@ -374,11 +370,10 @@ Again I stripped the script to the minimum.
     if [ "$newstatus" = "tuntap_up" ]; then
         echo "$tuntap_intf setup"
         /sbin/ip link set dev $tuntap_intf mtu 1400 up
-        /sbin/ip addr add 10.42.42.2/30 dev $tuntap_intf
-        /sbin/route add proof.ovh.net gw 10.42.42.2
+        /sbin/route add proof.ovh.net dev $tuntap_intf
     elif [ "$newstatus" = "tuntap_down" ]; then
         echo "$tuntap_intf shutdown"
-        /sbin/route del proof.ovh.net gw 10.42.42.2
+        /sbin/route del proof.ovh.net dev $tuntap_intf
     elif [ "$newstatus" = "rtun_up" ]; then
         echo "rtun [${rtun}] is up"
     elif [ "$newstatus" = "rtun_down" ]; then
@@ -401,19 +396,20 @@ mlvpn0.conf
     [general]
     statuscommand = "/etc/mlvpn/mlvpn0_updown.sh"
     tuntap = "tun"
-    loglevel = 1
     mode = "server"
     interface_name = "mlvpn0"
     timeout = 30
     password = "pleasechangeme!"
+    reorder_buffer_size = 64
+    loss_tolerence = 50
+
+    [filters]
 
     [adsl1]
     bindport = 5080
-    bandwidth_upload = 512000
 
     [adsl2]
     bindport = 5081
-    bandwidth_upload = 512000
 
 
 mlvpn0_updown.sh
@@ -431,16 +427,11 @@ mlvpn0_updown.sh
     if [ "$newstatus" = "tuntap_up" ]; then
         echo "$tuntap_intf setup"
         /sbin/ip link set dev $tuntap_intf mtu 1400 up
-        /sbin/ip addr add 10.42.42.1/30 dev $tuntap_intf
         # NAT thru our server (eth0 is our output interface on the server)
-        # mlvpn0 link
-        /sbin/iptables -t nat -A POSTROUTING -o eth0 -s 10.42.42.0/30 -j MASQUERADE
         # LAN 192.168.0.0/24 from "client"
-        /sbin/ip route add 192.168.0.0/24 via 10.42.42.2
+        /sbin/ip route add 192.168.0.0/24 dev $tuntap_intf
         /sbin/iptables -t nat -A POSTROUTING -o eth0 -s 192.168.0.0/24 -j MASQUERADE
     elif [ "$newstatus" = "tuntap_down" ]; then
-        /sbin/ip route del 192.168.0.0/24 via 10.42.42.2
-        /sbin/iptables -t nat -D POSTROUTING -o eth0 -s 10.42.42.0/30 -j MASQUERADE
         /sbin/iptables -t nat -D POSTROUTING -o eth0 -s 192.168.0.0/24 -j MASQUERADE
     fi
     ) >> /var/log/mlvpn_commands.log 2>&1
@@ -483,12 +474,8 @@ Seems good. Let's test the ICMP echo reply. (ping)
 
 .. code-block:: sh
 
-    # Testing connectivity to the server (tunnel address space)
-    root@client:~ # ping -n -c2 -I10.42.42.2 10.42.42.1
-    # Testing connectivity to the server (LAN address space)
-    root@client:~ # ping -n -c1 -I192.168.0.1 10.42.42.1
     # Testing connectivity to the internet
     root@client:~ # ping -n -c1 -I192.168.0.1 proof.ovh.net
     # Download speed testing
-    root@client:~ # wget -O/dev/null http://proof.ovh.net/files/10Gio.dat
+    root@client:~ # wget -4 -O/dev/null http://proof.ovh.net/files/10Gio.dat
 
