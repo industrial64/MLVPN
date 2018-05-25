@@ -269,11 +269,11 @@ mlvpn_config(int config_file_fd, int first_time)
             } else if (strncmp(lastSection, "filters", 7) != 0) {
                 char *bindaddr;
                 char *bindport;
-<<<<<<< HEAD
+
                 char *binddev;
-=======
+
                 uint32_t bindfib = 0;
->>>>>>> debian-stretch
+
                 char *dstaddr;
                 char *dstport;
                 uint32_t bwlimit = 0;
@@ -315,13 +315,9 @@ mlvpn_config(int config_file_fd, int first_time)
                         config, lastSection, "remoteport", &dstport, NULL,
                         "No remote port specified.\n", 1);
                 }
-<<<<<<< HEAD
                 _conf_set_str_from_conf(
                     config, lastSection, "binddev", &binddev, NULL, NULL, 0);
                 _conf_set_int_from_conf(
-=======
-                _conf_set_uint_from_conf(
->>>>>>> debian-stretch
                     config, lastSection, "bandwidth_upload", &bwlimit, 0,
                     NULL, 0);
                 _conf_set_uint_from_conf(
@@ -393,16 +389,7 @@ mlvpn_config(int config_file_fd, int first_time)
                                 strlcpy(tmptun->destport, dstport, MLVPN_MAXPORTSTR);
                             }
 =======
-                        log_info("config",
-                            "%s restart for configuration reload",
-                              tmptun->name);
-                        if ((! mystr_eq(tmptun->bindaddr, bindaddr)) ||
-                                (! mystr_eq(tmptun->bindport, bindport)) ||
-                                (tmptun->bindfib != bindfib) ||
-                                (! mystr_eq(tmptun->destaddr, dstaddr)) ||
-                                (! mystr_eq(tmptun->destport, dstport))) {
-                            mlvpn_rtun_status_down(tmptun);
-                        }
+
 
                         if (bindaddr) {
                             strlcpy(tmptun->bindaddr, bindaddr, sizeof(tmptun->bindaddr));
@@ -423,9 +410,7 @@ mlvpn_config(int config_file_fd, int first_time)
                         {
                             log_info("config", "%s fallback_only changed from %d to %d",
                                 tmptun->name, tmptun->fallback_only, fallback_only);
->>>>>>> debian-stretch
-                            tmptun->fallback_only = fallback_only;
-                        }
+                        {    
                         if (tmptun->bandwidth != bwlimit)
                         {
                         log_info("config", "%s bandwidth changed from %d to %d",
@@ -447,14 +432,9 @@ mlvpn_config(int config_file_fd, int first_time)
                 {
                     log_info("config", "%s tunnel added", lastSection);
                     mlvpn_rtun_new(
-<<<<<<< HEAD
-                        lastSection, bindaddr, bindport, binddev,
-                        dstaddr, dstport, default_server_mode, timeout, fallback_only);
-=======
-                        lastSection, bindaddr, bindport, bindfib, dstaddr, dstport,
+                        lastSection, bindaddr, bindport, binddev, dstaddr, dstport,
                         default_server_mode, timeout, fallback_only,
                         bwlimit, loss_tolerence);
->>>>>>> debian-stretch
                 }
                 if (bindaddr)
                     free(bindaddr);
