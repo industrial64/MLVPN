@@ -136,19 +136,11 @@ typedef struct mlvpn_tunnel_s
 {
     LIST_ENTRY(mlvpn_tunnel_s) entries;
     char *name;           /* tunnel name */
-<<<<<<< HEAD
     char *bindaddr;       /* packets source */
     char *bindport;       /* packets port source (or NULL) */
     char *binddev;        /* bind to specific device */
     char *destaddr;       /* remote server ip (can be hostname) */
     char *destport;       /* remote server port */
-=======
-    char bindaddr[MLVPN_MAXHNAMSTR]; /* packets source */
-    char bindport[MLVPN_MAXPORTSTR]; /* packets port source (or NULL) */
-    uint32_t bindfib;     /* FIB number to use */
-    char destaddr[MLVPN_MAXHNAMSTR]; /* remote server ip (can be hostname) */
-    char destport[MLVPN_MAXPORTSTR]; /* remote server port */
->>>>>>> debian-stretch
     int fd;               /* socket file descriptor */
     int server_mode;      /* server or client */
     int disconnects;      /* is it stable ? */
@@ -202,11 +194,7 @@ int mlvpn_rtun_wrr_reset(struct rtunhead *head, int use_fallbacks);
 mlvpn_tunnel_t *mlvpn_rtun_wrr_choose();
 mlvpn_tunnel_t *mlvpn_rtun_choose();
 mlvpn_tunnel_t *mlvpn_rtun_new(const char *name,
-<<<<<<< HEAD
     const char *bindaddr, const char *bindport, const char *binddev,
-=======
-    const char *bindaddr, const char *bindport, uint32_t bindfib,
->>>>>>> debian-stretch
     const char *destaddr, const char *destport,
     int server_mode, uint32_t timeout,
     int fallback_only, uint32_t bandwidth,
