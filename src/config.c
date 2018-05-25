@@ -272,7 +272,7 @@ mlvpn_config(int config_file_fd, int first_time)
 
                 char *binddev;
 
-                uint32_t bindfib = 0;
+
 
                 char *dstaddr;
                 char *dstport;
@@ -315,9 +315,11 @@ mlvpn_config(int config_file_fd, int first_time)
                         config, lastSection, "remoteport", &dstport, NULL,
                         "No remote port specified.\n", 1);
                 }
+
                 _conf_set_str_from_conf(
                     config, lastSection, "binddev", &binddev, NULL, NULL, 0);
-                _conf_set_int_from_conf(
+                _conf_set_uint_from_conf(
+
                     config, lastSection, "bandwidth_upload", &bwlimit, 0,
                     NULL, 0);
                 _conf_set_uint_from_conf(
@@ -342,59 +344,30 @@ mlvpn_config(int config_file_fd, int first_time)
                 }
                 LIST_FOREACH(tmptun, &rtuns, entries)
                 {
-                        if (mystr_eq(lastSection, tmptun->name))
-                        {
-                            log_info("config",
-                                "%s tunnel restarted during config reload",
-                                  tmptun->name);
-                            if ((! mystr_eq(tmptun->bindaddr, bindaddr)) ||
-                                    (! mystr_eq(tmptun->bindport, bindport)) ||
-                                    (! mystr_eq(tmptun->destaddr, dstaddr)) ||
-                                    (! mystr_eq(tmptun->destport, dstport)) ||
-                                    (! mystr_eq(tmptun->binddev, binddev))) {
-                                mlvpn_rtun_status_down(tmptun);
-                            }
-
-                            if (bindaddr)
-                            {
-                                if (! tmptun->bindaddr)
-                                    tmptun->bindaddr = calloc(1, MLVPN_MAXHNAMSTR+1);
-                                strlcpy(tmptun->bindaddr, bindaddr, MLVPN_MAXHNAMSTR);
-                            }
-                            if (bindport)
-                            {
-                                if (! tmptun->bindport)
-                                    tmptun->bindport = calloc(1, MLVPN_MAXPORTSTR+1);
-                                strlcpy(tmptun->bindport, bindport, MLVPN_MAXPORTSTR);
-                            }
-                            if (binddev)
-                            {
-                                if (! tmptun->binddev)
-                                    tmptun->binddev = calloc(1, MLVPN_IFNAMSIZ+1);
-                                strlcpy(tmptun->binddev, binddev, MLVPN_IFNAMSIZ);
-                            }
-                            if (dstaddr)
-                            {
-                                if (! tmptun->destaddr)
-                                    tmptun->destaddr = calloc(1, MLVPN_MAXHNAMSTR+1);
-                                strlcpy(tmptun->destaddr, dstaddr, MLVPN_MAXHNAMSTR);
-                            }
-                            if (dstport)
-                            {
-                                if (! tmptun->destport)
-                                    tmptun->destport = calloc(1, MLVPN_MAXPORTSTR+1);
-                                strlcpy(tmptun->destport, dstport, MLVPN_MAXPORTSTR);
-                            }
+                    if (mystr_eq(lastSection, tmptun->name))
+                    {
+                        log_info("config",
+                            "%s restart for configuration reload",
+                              tmptun->name);
+                        if ((! mystr_eq(tmptun->bindaddr, bindaddr)) ||
+                                (! mystr_eq(tmptun->bindport, bindport)) ||
+                                (! mystr_eq(tmptun->binddev, binddev))) ||
+                                (! mystr_eq(tmptun->destaddr, dstaddr)) ||
+                                (! mystr_eq(tmptun->destport, dstport))) {
+                            mlvpn_rtun_status_down(tmptun);
+                        }
 
                         if (bindaddr) {
                             strlcpy(tmptun->bindaddr, bindaddr, sizeof(tmptun->bindaddr));
                         }
                         if (bindport) {
                             strlcpy(tmptun->bindport, bindport, sizeof(tmptun->bindport));
-                        }
-                        if (tmptun->bindfib != bindfib) {
-                            tmptun->bindfib = bindfib;
-                        }
+                        if (binddev)
+                            {
+                                if (! tmptun->binddev)
+                                    tmptun->binddev = calloc(1, MLVPN_IFNAMSIZ+1);
+                                strlcpy(tmptun->binddev, binddev, MLVPN_IFNAMSIZ);
+                            }
                         if (dstaddr) {
                             strlcpy(tmptun->destaddr, dstaddr, sizeof(tmptun->destaddr));
                         }
@@ -405,7 +378,8 @@ mlvpn_config(int config_file_fd, int first_time)
                         {
                             log_info("config", "%s fallback_only changed from %d to %d",
                                 tmptun->name, tmptun->fallback_only, fallback_only);
-                        {    
+                            tmptun->fallback_only = fallback_only;
+                        }
                         if (tmptun->bandwidth != bwlimit)
                         {
                         log_info("config", "%s bandwidth changed from %d to %d",
