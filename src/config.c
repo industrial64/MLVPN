@@ -289,9 +289,6 @@ mlvpn_config(int config_file_fd, int first_time)
                     _conf_set_str_from_conf(
                         config, lastSection, "bindport", &bindport, NULL,
                         "bind port is mandatory in server mode.\n", 1);
-                    _conf_set_uint_from_conf(
-                        config, lastSection, "bindfib", &bindfib, 0,
-                        NULL, 0);
                     _conf_set_str_from_conf(
                         config, lastSection, "remotehost", &dstaddr, NULL,
                         NULL, 0);
@@ -305,9 +302,6 @@ mlvpn_config(int config_file_fd, int first_time)
                     _conf_set_str_from_conf(
                         config, lastSection, "bindport", &bindport, NULL,
                         NULL, 0);
-                     _conf_set_uint_from_conf(
-                        config, lastSection, "bindfib", &bindfib, 0,
-                        NULL, 0);
                     _conf_set_str_from_conf(
                         config, lastSection, "remotehost", &dstaddr, NULL,
                         "No remote address specified.\n", 1);
@@ -319,7 +313,6 @@ mlvpn_config(int config_file_fd, int first_time)
                 _conf_set_str_from_conf(
                     config, lastSection, "binddev", &binddev, NULL, NULL, 0);
                 _conf_set_uint_from_conf(
-
                     config, lastSection, "bandwidth_upload", &bwlimit, 0,
                     NULL, 0);
                 _conf_set_uint_from_conf(
@@ -351,7 +344,7 @@ mlvpn_config(int config_file_fd, int first_time)
                               tmptun->name);
                         if ((! mystr_eq(tmptun->bindaddr, bindaddr)) ||
                                 (! mystr_eq(tmptun->bindport, bindport)) ||
-                                (! mystr_eq(tmptun->binddev, binddev))) ||
+                                (! mystr_eq(tmptun->binddev, binddev)) ||
                                 (! mystr_eq(tmptun->destaddr, dstaddr)) ||
                                 (! mystr_eq(tmptun->destport, dstport))) {
                             mlvpn_rtun_status_down(tmptun);
@@ -362,6 +355,7 @@ mlvpn_config(int config_file_fd, int first_time)
                         }
                         if (bindport) {
                             strlcpy(tmptun->bindport, bindport, sizeof(tmptun->bindport));
+                        }
                         if (binddev)
                             {
                                 if (! tmptun->binddev)
